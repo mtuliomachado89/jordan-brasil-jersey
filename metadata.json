@@ -1,0 +1,6 @@
+{
+  "name": "Camisa Jordan Brasil Edição Especial",
+  "description": "Landing page premium de alta conversão para venda da camiseta Jordan x Brasil Edição Especial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
