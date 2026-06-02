@@ -16,12 +16,17 @@ import Warranty from "./components/Warranty";
 import FAQ from "./components/FAQ";
 import Footer from "./components/Footer";
 import CheckoutModal from "./components/CheckoutModal";
+import LegalPagesModal, { LegalTab } from "./components/LegalPagesModal";
 import { Size } from "./types";
 
 export default function App() {
   const [selectedSize, setSelectedSize] = useState<Size>("M");
+  const [secondSize, setSecondSize] = useState<Size | undefined>(undefined);
+  const [initialQty, setInitialQty] = useState<number>(1);
   const [cartCount, setCartCount] = useState(0);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTab>("terms");
 
   const heroRef = useRef<HTMLDivElement>(null);
 
@@ -33,14 +38,24 @@ export default function App() {
     }
   };
 
-  const handleAddToCart = (size: Size) => {
+  const handleAddToCart = (size: Size, secSize?: Size, qty: number = 1) => {
     setSelectedSize(size);
+    setSecondSize(secSize);
+    setInitialQty(qty);
     setIsCheckoutOpen(true);
   };
 
   const handleCtaFinalClick = () => {
-    // For maximum conversions, open checkout directly with their standard size choice
+    // For maximum conversions, default to combo offer when clicking generic CTAs
+    setInitialQty(2);
+    setSecondSize("G"); // default second size G
+    setSelectedSize("M"); // default first M
     setIsCheckoutOpen(true);
+  };
+
+  const handleOpenLegal = (tab: LegalTab) => {
+    setLegalTab(tab);
+    setIsLegalOpen(true);
   };
 
   return (
@@ -84,14 +99,23 @@ export default function App() {
       <FAQ />
 
       {/* 11. Final CTA push and site information maps */}
-      <Footer onCtaClick={handleCtaFinalClick} />
+      <Footer onCtaClick={handleCtaFinalClick} onLegalPageClick={handleOpenLegal} />
 
       {/* 12. Full-scale e-commerce purchase cart and wizard Checkout drawer */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         selectedSize={selectedSize}
+        secondSize={secondSize}
+        initialQty={initialQty}
         onUpdateCartCount={setCartCount}
+      />
+
+      {/* 13. Dynamic legal modal containing conditions, guidelines and parcel queries */}
+      <LegalPagesModal
+        isOpen={isLegalOpen}
+        onClose={() => setIsLegalOpen(false)}
+        initialTab={legalTab}
       />
 
     </div>

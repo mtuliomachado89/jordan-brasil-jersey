@@ -95,7 +95,7 @@ export default function FAQ() {
             <p className="text-sm text-gray-300 mt-1">Fale diretamente com nossa equipe de suporte pelo WhatsApp Oficial.</p>
           </div>
           <a
-            href="https://wa.me/5511999999999"
+            href="https://wa.me/5531995044967?text=ol%C3%A1%20tenho%20uma%20d%C3%BAvida"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center space-x-1.5 bg-emerald-500 hover:bg-emerald-450 text-black font-black text-xs px-5 py-3 rounded-xl transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"

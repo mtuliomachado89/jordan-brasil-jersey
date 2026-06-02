@@ -6,12 +6,14 @@
 import React from "react";
 import { Lock, FileText, HelpCircle, ShieldCheck, Mail, Phone, Flame } from "lucide-react";
 import { PRODUCT_INFO } from "../data";
+import { LegalTab } from "./LegalPagesModal";
 
 interface FooterProps {
   onCtaClick: () => void;
+  onLegalPageClick: (tab: LegalTab) => void;
 }
 
-export default function Footer({ onCtaClick }: FooterProps) {
+export default function Footer({ onCtaClick, onLegalPageClick }: FooterProps) {
   return (
     <footer className="bg-transparent text-white relative">
       
@@ -86,11 +88,39 @@ export default function Footer({ onCtaClick }: FooterProps) {
             {/* Column 2: Quick Links */}
             <div className="space-y-3">
               <span className="text-[11px] text-white font-mono uppercase tracking-widest font-black block">PÁGINAS LEGAIS</span>
-              <ul className="space-y-1.5 font-normal text-gray-500 text-xs">
-                <li><a href="#" className="hover:text-[#FFD400] transition-colors">Termos de Uso de Serviço</a></li>
-                <li><a href="#" className="hover:text-[#FFD400] transition-colors">Diretrizes de Privacidade</a></li>
-                <li><a href="#" className="hover:text-[#FFD400] transition-colors">Políticas de Reembolsos e Trocas</a></li>
-                <li><a href="#" className="hover:text-[#FFD400] transition-colors">Rastreie Seu Pedido</a></li>
+              <ul className="space-y-1.5 font-normal text-gray-500 text-xs text-left">
+                <li>
+                  <button
+                    onClick={(e) => { e.preventDefault(); onLegalPageClick("terms"); }}
+                    className="hover:text-[#FFD400] transition-colors cursor-pointer text-left focus:outline-none"
+                  >
+                    Termos de Uso de Serviço
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={(e) => { e.preventDefault(); onLegalPageClick("privacy"); }}
+                    className="hover:text-[#FFD400] transition-colors cursor-pointer text-left focus:outline-none"
+                  >
+                    Diretrizes de Privacidade
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={(e) => { e.preventDefault(); onLegalPageClick("refund"); }}
+                    className="hover:text-[#FFD400] transition-colors cursor-pointer text-left focus:outline-none"
+                  >
+                    Políticas de Reembolsos e Trocas
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={(e) => { e.preventDefault(); onLegalPageClick("tracking"); }}
+                    className="hover:text-[#FFD400] transition-colors cursor-pointer text-left focus:outline-none"
+                  >
+                    Rastreie Seu Pedido
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -104,7 +134,9 @@ export default function Footer({ onCtaClick }: FooterProps) {
                 </li>
                 <li className="flex items-center space-x-2">
                   <Phone className="w-4 h-4 text-gray-500" />
-                  <span>+55 (11) 99999-9999</span>
+                  <a href="https://wa.me/5531995044967?text=ol%C3%A1%20tenho%20uma%20d%C3%BAvida" target="_blank" rel="noopener noreferrer" className="hover:text-[#FFD400] transition-colors">
+                    +55 (31) 99504-4967
+                  </a>
                 </li>
                 <li className="flex items-center space-x-2 text-emerald-450 font-bold">
                   <span>✓ Atendimento Das 08h às 18h</span>

@@ -9,11 +9,13 @@ import { PRODUCT_INFO, IMAGES } from "../data";
 import { Size } from "../types";
 
 interface HeroProps {
-  onAddToCart: (size: Size) => void;
+  onAddToCart: (size: Size, secondSize?: Size, quantity?: number) => void;
 }
 
 export default function Hero({ onAddToCart }: HeroProps) {
+  const [offerType, setOfferType] = useState<"single" | "combo">("combo");
   const [selectedSize, setSelectedSize] = useState<Size>("M");
+  const [selectedSize2, setSelectedSize2] = useState<Size>("G");
   const [minutes, setMinutes] = useState(14);
   const [seconds, setSeconds] = useState(59);
   const [activeUsers, setActiveUsers] = useState(142);
@@ -63,7 +65,7 @@ export default function Hero({ onAddToCart }: HeroProps) {
   }, [minutes]);
 
   const handleCtaClick = () => {
-    onAddToCart(selectedSize);
+    onAddToCart(selectedSize, offerType === "combo" ? selectedSize2 : undefined, offerType === "combo" ? 2 : 1);
   };
 
   return (
@@ -112,74 +114,158 @@ export default function Hero({ onAddToCart }: HeroProps) {
               Uma peça exclusiva para quem vive o futebol, o streetwear e a cultura de vanguarda. Engenharia têxtil respirável Dri-Mesh com acabamentos premium de alta durabilidade para você destacar o seu estilo com elegância.
             </p>
 
-            {/* Price Box & Offer Card */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-sm max-w-lg">
-              {/* Promo Countdown Label */}
-              <div className="absolute top-0 right-0 bg-[#FFD400] font-black text-[9px] sm:text-xs text-black px-3 py-1 rounded-bl-xl tracking-wider uppercase animate-pulse flex items-center space-x-1">
-                <AlertCircle className="w-3.5 h-3.5 text-black" />
-                <span>OFERTA EXPIRA EM: {minutes}:{seconds < 10 ? `0${seconds}` : seconds}</span>
-              </div>
-
-              <div className="flex flex-col space-y-4">
-                {/* Preço de / Por */}
-                <div>
-                  <span className="text-xs text-white/40 block line-through">
-                    De R$ {PRODUCT_INFO.originalPrice.toFixed(2).replace(".", ",")}
+            {/* PROMO SELECTOR & OFFER CHOOSER */}
+            <div className="space-y-4 max-w-lg">
+              <span className="text-xs font-mono font-bold text-[#FFD400] block uppercase tracking-widest animate-pulse">
+                ⚡ SELECIONE SUA OPÇÃO DE COMPRA:
+              </span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                
+                {/* OFFER 1: COMBO SPECIAL (2 Jerseys) */}
+                <button
+                  type="button"
+                  onClick={() => setOfferType("combo")}
+                  className={`text-left p-4 rounded-2xl border flex flex-col justify-between relative overflow-hidden transition-all duration-300 pointer-events-auto cursor-pointer ${
+                    offerType === "combo"
+                      ? "bg-slate-900/90 border-[#FFD400] ring-1 ring-[#FFD400] shadow-[0_0_20px_rgba(255,212,0,0.15)] scale-[1.02]"
+                      : "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10"
+                  }`}
+                >
+                  {/* Badge */}
+                  <span className="absolute top-0 right-0 bg-[#FFD400] text-black text-[9px] font-black px-2.5 py-0.5 rounded-bl-lg uppercase font-mono tracking-widest animate-bounce">
+                    MELHOR COMBO
                   </span>
-                  
-                  <div className="flex items-baseline space-x-2 mt-1">
-                    <span className="text-xs sm:text-sm font-semibold text-white/60 uppercase">Por apenas:</span>
-                    <span className="text-4xl sm:text-5xl font-black text-[#FFD400] tracking-tight">
-                      R$ {PRODUCT_INFO.promoPrice.toFixed(2).replace(".", ",")}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Parcelamento details */}
-                <div className="flex items-center space-x-2 bg-black/40 px-4 py-2.5 rounded-xl border border-white/5">
-                  <div className="bg-emerald-500/10 p-1.5 rounded-lg">
-                    <svg className="w-5 h-5 text-emerald-450" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                  </div>
                   <div>
-                    <span className="text-xs text-white/70 block font-medium">
-                      ou até <b className="text-white font-bold">{PRODUCT_INFO.maxInstallments}x de R$ {PRODUCT_INFO.pricePerInstallment.toFixed(2).replace(".", ",")}</b> no cartão
-                    </span>
-                    <span className="text-[10px] text-emerald-450 block font-semibold mt-0.5">
-                      ✓ PIX com 5% de desconto extra (R$ 132,90) e envio imediato
-                    </span>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Leve 2 Mantos</span>
+                    <h4 className="text-base font-black text-white uppercase mt-0.5">SUPER COMBO CAMPEÃO</h4>
+                    <span className="text-[10px] text-emerald-400 font-bold block mt-1">✓ FRETE EXPRESSO GRÁTIS</span>
                   </div>
-                </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-baseline justify-between w-full">
+                    <div>
+                      <span className="text-[10px] text-white/40 block line-through">R$ 279,80</span>
+                      <span className="text-xl font-black text-[#FFD400] font-mono">R$ 199,90</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-450 font-bold underline font-mono">Manto sai a R$ 99,95!</span>
+                  </div>
+                </button>
+
+                {/* OFFER 2: SINGLE UNIT */}
+                <button
+                  type="button"
+                  onClick={() => setOfferType("single")}
+                  className={`text-left p-4 rounded-2xl border flex flex-col justify-between relative overflow-hidden transition-all duration-300 pointer-events-auto cursor-pointer ${
+                    offerType === "single"
+                      ? "bg-slate-900/90 border-slate-700 ring-1 ring-slate-800 scale-[1.02]"
+                      : "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10"
+                  }`}
+                >
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Leve 1 Manto</span>
+                    <h4 className="text-base font-black text-white uppercase mt-0.5">UNIDADE INDIVIDUAL</h4>
+                    <span className="text-[10px] text-slate-400 block mt-1">Ideal para presente único</span>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-baseline justify-between w-full">
+                    <div>
+                      <span className="text-[10px] text-white/40 block line-through">R$ 299,90</span>
+                      <span className="text-xl font-black text-white/95 font-mono">R$ 139,90</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-mono">R$ 139,90 cada</span>
+                  </div>
+                </button>
+
               </div>
             </div>
 
-            {/* SELETOR DE TAMANHO */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between max-w-sm">
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white/70 flex items-center space-x-1.5">
-                  <span>Escolha seu tamanho:</span>
+            {/* Countdown Urgent Banner */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-xl relative overflow-hidden backdrop-blur-sm max-w-lg">
+              <div className="flex items-center justify-between text-xs font-mono font-medium text-gray-300">
+                <span className="flex items-center gap-1.5 text-red-400 font-bold animate-pulse">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>PREÇOS EXCLUSIVOS POR:</span>
                 </span>
-                <span className="text-xs text-[#FFD400] font-mono underline cursor-pointer hover:brightness-110">
-                  Ajuda com Medidas
+                <span className="text-[#FFD400] font-black tracking-widest text-sm bg-black/45 px-2.5 py-1 rounded">
+                  {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
                 </span>
               </div>
-              <div className="flex space-x-2 sm:space-x-3">
-                {(["P", "M", "G", "GG", "XG"] as Size[]).map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center font-black text-sm transition-all duration-200 border-2 ${
-                      selectedSize === size
-                        ? "bg-[#FFD400] border-[#FFD400] text-black scale-110 shadow-[0_0_15px_rgba(255,212,0,0.35)] btn-pulse"
-                        : "bg-white/5 border-white/10 text-white hover:border-white/20 hover:scale-105"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+              <span className="text-[10px] text-emerald-450 block font-semibold mt-2">
+                ✓ Compre com inteligência: Economize R$ 79,90 no Combo Campeão e parcele em até 12x sem juros!
+              </span>
+            </div>
+
+            {/* SELETOR DE TAMANHO(S) */}
+            <div className="space-y-4 max-w-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white/70">
+                  {offerType === "combo" ? "Escolha os tamanhos do seu Combo:" : "Escolha seu tamanho:"}
+                </span>
               </div>
+
+              {offerType === "combo" ? (
+                <div className="space-y-3.5 bg-black/40 border border-white/5 p-4 rounded-2xl">
+                  {/* Size Camisa 1 */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] text-[#FFD450] font-bold uppercase tracking-wider block">Camisa #1 - Tamanho:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {(["P", "M", "G", "GG", "XG"] as Size[]).map((size) => (
+                        <button
+                          key={`c1-${size}`}
+                          type="button"
+                          onClick={() => setSelectedSize(size)}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs transition-all duration-200 border ${
+                            selectedSize === size
+                              ? "bg-[#FFD400] border-[#FFD400] text-black font-black scale-105 shadow-[0_0_10px_rgba(255,212,0,0.25)]"
+                              : "bg-white/5 border-white/10 text-white hover:border-white/20"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Size Camisa 2 */}
+                  <div className="space-y-1.5 border-t border-white/5 pt-2.5">
+                    <span className="text-[11px] text-[#FFD450] font-bold uppercase tracking-wider block">Camisa #2 - Tamanho:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {(["P", "M", "G", "GG", "XG"] as Size[]).map((size) => (
+                        <button
+                          key={`c2-${size}`}
+                          type="button"
+                          onClick={() => setSelectedSize2(size)}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs transition-all duration-200 border ${
+                            selectedSize2 === size
+                              ? "bg-[#FFD400] border-[#FFD400] text-black font-black scale-105 shadow-[0_0_10px_rgba(255,212,0,0.25)]"
+                              : "bg-white/5 border-white/10 text-white hover:border-white/20"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex space-x-2 sm:space-x-3">
+                  {(["P", "M", "G", "GG", "XG"] as Size[]).map((size) => (
+                    <button
+                      key={`single-${size}`}
+                      type="button"
+                      onClick={() => setSelectedSize(size)}
+                      className={`w-12 h-12 sm:w-13 sm:h-13 rounded-xl flex items-center justify-center font-black text-sm transition-all duration-200 border-2 ${
+                        selectedSize === size
+                          ? "bg-[#FFD400] border-[#FFD400] text-black scale-110 shadow-[0_0_15px_rgba(255,212,0,0.35)] btn-pulse"
+                          : "bg-white/5 border-white/10 text-white hover:border-white/20"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* BOTÃO CTA PRINCIPAL */}
@@ -191,7 +277,7 @@ export default function Hero({ onAddToCart }: HeroProps) {
                 {/* Shiny reflex filter */}
                 <div className="absolute inset-0 w-1/2 h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine" />
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 fill-current text-black group-hover:rotate-6 transition-transform" />
-                <span>🛒 Garantir Minha Camisa Agora</span>
+                <span>🛒 Garantir Meu Desconto Especial Agora</span>
               </button>
               
               {/* Trust elements below CTA */}

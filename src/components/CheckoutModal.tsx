@@ -12,10 +12,12 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedSize: Size;
+  secondSize?: Size;
+  initialQty?: number;
   onUpdateCartCount: (count: number) => void;
 }
 
-export default function CheckoutModal({ isOpen, onClose, selectedSize, onUpdateCartCount }: CheckoutModalProps) {
+export default function CheckoutModal({ isOpen, onClose, selectedSize, secondSize, initialQty = 1, onUpdateCartCount }: CheckoutModalProps) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [cart, setCart] = useState<CartItem>({
     id: "j1",
@@ -23,16 +25,22 @@ export default function CheckoutModal({ isOpen, onClose, selectedSize, onUpdateC
     price: PRODUCT_INFO.originalPrice,
     promoPrice: PRODUCT_INFO.promoPrice,
     size: selectedSize,
-    quantity: 1,
+    secondSize: secondSize,
+    quantity: initialQty,
     image: IMAGES.front,
   });
 
-  // Keep size in sync if updated outside before opening
+  // Keep size, secondSize, and quantity in sync if updated outside before opening
   useEffect(() => {
     if (isOpen) {
-      setCart(prev => ({ ...prev, size: selectedSize }));
+      setCart(prev => ({
+        ...prev,
+        size: selectedSize,
+        secondSize: secondSize,
+        quantity: initialQty
+      }));
     }
-  }, [selectedSize, isOpen]);
+  }, [selectedSize, secondSize, initialQty, isOpen]);
 
   // Form Details
   const [formData, setFormData] = useState<CheckoutDetails>({
@@ -78,8 +86,12 @@ export default function CheckoutModal({ isOpen, onClose, selectedSize, onUpdateC
 
   if (!isOpen) return null;
 
-  // Calculators
-  const subtotal = cart.promoPrice * cart.quantity;
+  // Calculators - Promoção 2 por 199,90 (R$ 99,95 cada a partir de 2 camisetas)
+  const isComboActive = cart.quantity >= 2;
+  const numPairs = Math.floor(cart.quantity / 2);
+  const numSingles = cart.quantity % 2;
+  const subtotal = (numPairs * 199.90) + (numSingles * cart.promoPrice);
+  const unitPrice = isComboActive ? 99.95 : cart.promoPrice;
   const couponDiscount = couponApplied ? subtotal * discountPercent : 0;
   const methodDiscount = formData.paymentMethod === "pix" ? (subtotal - couponDiscount) * 0.05 : 0;
   const finalTotal = subtotal - couponDiscount - methodDiscount;
@@ -237,10 +249,53 @@ export default function CheckoutModal({ isOpen, onClose, selectedSize, onUpdateC
                   <h4 className="text-sm font-bold text-white uppercase truncate">{cart.name}</h4>
                   
                   {/* Selected Size Adjustments */}
-                  <div className="flex items-center space-x-3 mt-1.5">
-                    <span className="text-xs text-gray-400 font-medium font-mono">Tamanho: <b className="text-white bg-white/5 border border-white/10 px-1.5 py-0.5 rounded ml-1 font-bold">{cart.size}</b></span>
-                    <span className="text-xs text-emerald-450 font-mono">✓ Em Estoque</span>
-                  </div>
+                  {cart.quantity === 1 ? (
+                    <div className="flex flex-col space-y-1.5 mt-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-400 font-mono">Tamanho:</span>
+                        <select
+                          value={cart.size}
+                          onChange={(e) => setCart(p => ({ ...p, size: e.target.value as Size }))}
+                          className="bg-black/60 border border-white/10 text-white text-xs rounded px-2 py-0.5 focus:outline-none focus:border-[#FFD400] cursor-pointer"
+                        >
+                          {(["P", "M", "G", "GG", "XG"] as Size[]).map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-mono">✓ Em Estoque</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col space-y-2 mt-2 pt-2 border-t border-white/5">
+                      <span className="text-[10px] text-[#FFD400] font-extrabold uppercase tracking-wider">Tamanhos do Combo (Promoção 2x):</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col bg-black/40 p-1.5 rounded border border-white/5">
+                          <span className="text-[9px] text-gray-500 font-mono block mb-0.5">Camisa #1</span>
+                          <select
+                            value={cart.size}
+                            onChange={(e) => setCart(p => ({ ...p, size: e.target.value as Size }))}
+                            className="bg-slate-900 border border-white/10 text-white text-[11px] rounded px-1.5 py-0.5 focus:outline-none focus:border-[#FFD400] font-bold cursor-pointer"
+                          >
+                            {(["P", "M", "G", "GG", "XG"] as Size[]).map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex flex-col bg-black/40 p-1.5 rounded border border-white/5">
+                          <span className="text-[9px] text-gray-500 font-mono block mb-0.5">Camisa #2</span>
+                          <select
+                            value={cart.secondSize || "G"}
+                            onChange={(e) => setCart(p => ({ ...p, secondSize: e.target.value as Size }))}
+                            className="bg-slate-900 border border-white/10 text-white text-[11px] rounded px-1.5 py-0.5 focus:outline-none focus:border-[#FFD400] font-bold cursor-pointer"
+                          >
+                            {(["P", "M", "G", "GG", "XG"] as Size[]).map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Adjust Quantities */}
@@ -256,7 +311,7 @@ export default function CheckoutModal({ isOpen, onClose, selectedSize, onUpdateC
                     <span className="text-xs text-white font-black font-mono w-4 text-center">{cart.quantity}</span>
                     <button
                       type="button"
-                      onClick={() => setCart(p => ({ ...p, quantity: Math.min(5, p.quantity + 1) }))}
+                      onClick={() => setCart(p => ({ ...p, quantity: Math.min(5, p.quantity + 1), secondSize: p.secondSize || "G" }))}
                       className="text-gray-400 hover:text-white font-extrabold text-xs px-1 hover:scale-110 cursor-pointer"
                     >
                       +
@@ -264,6 +319,36 @@ export default function CheckoutModal({ isOpen, onClose, selectedSize, onUpdateC
                   </div>
                 </div>
               </div>
+
+              {/* Promo recommendation or celebration */}
+              {cart.quantity === 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setCart(p => ({ ...p, quantity: 2, secondSize: p.secondSize || "G" }))}
+                  className="w-full bg-[#FFD400]/10 border border-dashed border-[#FFD400]/40 p-4 rounded-2xl flex items-center justify-between hover:bg-[#FFD400]/15 transition-all text-left group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Sparkles className="w-5 h-5 text-[#FFD400] animate-pulse shrink-0" />
+                    <div>
+                      <span className="text-xs text-[#FFD400] font-black uppercase tracking-wider block">RECOMENDADO: COMBO CAMPEÃO DE VENDAS ➔</span>
+                      <span className="text-[11px] text-gray-300 leading-none">Leve a segunda camisa por apenas R$ 60,00 adicionais (<b className="text-white font-bold">2 Camisas por R$ 199,90</b>)!</span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-black bg-[#FFD400] px-3 py-1.5 rounded-lg border border-[#FFD400]/20 group-hover:scale-105 transition-all shrink-0">
+                    SABER MAIS
+                  </span>
+                </button>
+              ) : (
+                <div className="w-full bg-emerald-950/15 border border-emerald-500/25 p-4 rounded-2xl flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-xs text-emerald-400 font-extrabold uppercase tracking-wide block">✓ COMBO 2 UNIDADES ATIVADO DE FORMA SEGURA!</span>
+                    <span className="text-[11px] text-gray-300 leading-relaxed block">
+                      Aplicamos a tarifa especial de <b className="text-white">R$ 99,95</b> por camisa! Você está economizando <b className="text-[#FFD450]">R$ 79,90</b> no total deste pedido exclusivo.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Coupon Form Input */}
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 flex items-center justify-between gap-3 shadow-md">
@@ -303,6 +388,12 @@ export default function CheckoutModal({ isOpen, onClose, selectedSize, onUpdateC
                   <div className="flex justify-between text-xs text-emerald-450 font-medium">
                     <span>Cupom Desconto:</span>
                     <span className="font-mono font-bold">-R$ {couponDiscount.toFixed(2).replace(".", ",")}</span>
+                  </div>
+                )}
+                {formData.paymentMethod === "pix" && methodDiscount > 0 && (
+                  <div className="flex justify-between text-xs text-emerald-400 font-medium font-mono">
+                    <span className="font-sans">Desconto Extra PIX (5%):</span>
+                    <span className="font-bold">-R$ {methodDiscount.toFixed(2).replace(".", ",")}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-xs text-gray-400">

@@ -52,6 +52,7 @@ export interface CartItem {
   price: number;
   promoPrice: number;
   size: Size;
+  secondSize?: Size;
   quantity: number;
   image: string;
 }
