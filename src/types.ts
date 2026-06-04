@@ -38,6 +38,7 @@ export interface TestimonialItem {
   verified: boolean;
   avatarUrl?: string;
   initials: string;
+  reviewImage?: string;
 }
 
 export interface FaqItem {

@@ -158,6 +158,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     deliveryTime: "6 dias úteis",
     verified: true,
     initials: "RM",
+    reviewImage: "/review-1-unboxing.png",
   },
   {
     id: "t2",
@@ -168,6 +169,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     deliveryTime: "5 dias úteis",
     verified: true,
     initials: "LS",
+    reviewImage: "/review-2-detalhe.png",
   },
   {
     id: "t3",
@@ -178,6 +180,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     deliveryTime: "4 dias úteis",
     verified: true,
     initials: "GR",
+    reviewImage: "/review-3-caimento.png",
   },
   {
     id: "t4",

@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { Lock, Truck, ShieldAlert, CreditCard, RefreshCw, BadgePercent } from "lucide-react";
+import { Lock, Truck, ShieldAlert, RefreshCw, BadgePercent } from "lucide-react";
 
 export default function Warranty() {
   const guaranteeItems = [
@@ -31,9 +31,9 @@ export default function Warranty() {
     },
     {
       id: "w4",
-      title: "Parcelamento Facilitado",
-      description: "Sem complicação. Parcele em até 12 parcelas fixas usando qualquer bandeira de cartão de crédito do país.",
-      icon: CreditCard,
+      title: "PIX Instantâneo",
+      description: "Confirmação imediata do pagamento. Garanta o envio prioritário e a preparação acelerada do seu pedido.",
+      icon: BadgePercent,
       iconColor: "text-purple-400 bg-purple-450/10 border border-purple-400/10",
     },
     {

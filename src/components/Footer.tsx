@@ -164,7 +164,7 @@ export default function Footer({ onCtaClick, onLegalPageClick }: FooterProps) {
           {/* Bottom Copyright line */}
           <div className="border-t border-white/5 mt-10 pt-8 text-center flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-600 font-normal">
             <p>© 2026 JORDAN × BRASIL BR e Outlets Associados. Todos os direitos reservados.</p>
-            <p>CNPJ: 00.000.000/0001-00 • São Paulo, SP</p>
+            <p>São Paulo, SP</p>
           </div>
         </div>
       </section>

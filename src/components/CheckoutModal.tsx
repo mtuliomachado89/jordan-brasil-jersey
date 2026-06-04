@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  X, Lock, ShieldCheck, Ticket, CreditCard, Sparkles,
+  X, Lock, ShieldCheck, Ticket, Sparkles,
   CheckCircle, Truck, ArrowRight, Copy, Loader2, AlertCircle,
 } from "lucide-react";
 import { Size, CartItem, CheckoutDetails } from "../types";
@@ -29,6 +29,58 @@ interface CheckoutApiResponse {
   pixExpiresAt?: string;
   approved?: boolean;
   error?: string;
+}
+
+function isValidCpf(val: string): boolean {
+  const cpf = val.replace(/\D/g, "");
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1+$/.test(cpf)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cpf.charAt(i), 10) * (10 - i);
+  }
+  let rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(cpf.charAt(9), 10)) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cpf.charAt(i), 10) * (11 - i);
+  }
+  rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(cpf.charAt(10), 10)) return false;
+  return true;
+}
+
+function isValidCnpj(val: string): boolean {
+  const cnpj = val.replace(/\D/g, "");
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1+$/.test(cnpj)) return false;
+  
+  let size = cnpj.length - 2;
+  let numbers = cnpj.substring(0, size);
+  const digits = cnpj.substring(size);
+  let sum = 0;
+  let pos = size - 7;
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i), 10) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  let results = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (results !== parseInt(digits.charAt(0), 10)) return false;
+  
+  size = size + 1;
+  numbers = cnpj.substring(0, size);
+  sum = 0;
+  pos = size - 7;
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i), 10) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  results = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (results !== parseInt(digits.charAt(1), 10)) return false;
+  
+  return true;
 }
 
 export default function CheckoutModal({
@@ -68,6 +120,30 @@ export default function CheckoutModal({
   const [pixCountdown, setPixCountdown] = useState(299);
   const [isCopied, setIsCopied] = useState(false);
 
+  // Shirt personalization states
+  const [customizations, setCustomizations] = useState<Array<{ name: string; number: string; enabled: boolean }>>([
+    { name: "", number: "", enabled: false },
+    { name: "", number: "", enabled: false },
+    { name: "", number: "", enabled: false },
+    { name: "", number: "", enabled: false },
+    { name: "", number: "", enabled: false },
+  ]);
+
+  const handleCustomizationChange = (index: number, field: "name" | "number" | "enabled", val: any) => {
+    setCustomizations(prev => {
+      const updated = [...prev];
+      if (field === "name") {
+        updated[index] = { ...updated[index], name: val.toUpperCase() };
+      } else if (field === "number") {
+        updated[index] = { ...updated[index], number: val.replace(/\D/g, "") };
+      } else if (field === "enabled") {
+        updated[index] = { ...updated[index], enabled: val };
+      }
+      return updated;
+    });
+    if (formErrors.customization) setFormErrors(p => ({ ...p, customization: "" }));
+  };
+
   useEffect(() => { onUpdateCartCount(isOpen ? cart.quantity : 0); }, [cart.quantity, isOpen]);
 
   useEffect(() => {
@@ -82,10 +158,11 @@ export default function CheckoutModal({
   const isComboActive = cart.quantity >= 2;
   const numPairs = Math.floor(cart.quantity / 2);
   const numSingles = cart.quantity % 2;
-  const subtotal = (numPairs * 199.90) + (numSingles * cart.promoPrice);
+  const customizationCost = customizations.slice(0, cart.quantity).filter(x => x.enabled).length * 9.90;
+  const subtotal = (numPairs * 199.90) + (numSingles * cart.promoPrice) + customizationCost;
   const couponDiscount = couponApplied ? subtotal * discountPercent : 0;
-  const methodDiscount = formData.paymentMethod === "pix" ? (subtotal - couponDiscount) * 0.05 : 0;
-  const finalTotal = subtotal - couponDiscount - methodDiscount;
+  const methodDiscount = 0;
+  const finalTotal = subtotal - couponDiscount;
 
   const handleApplyCoupon = () => {
     const raw = couponCode.trim().toUpperCase();
@@ -121,9 +198,30 @@ export default function CheckoutModal({
     const errors: Record<string, string> = {};
     if (!formData.fullName.trim()) errors.fullName = "Nome é obrigatório";
     if (!formData.email.includes("@")) errors.email = "E-mail inválido";
-    if (formData.phone.replace(/\D/g, "").length < 10) errors.phone = "Telefone inválido";
-    if (formData.cpf.replace(/\D/g, "").length < 11) errors.cpf = "CPF inválido";
-    if (formData.cep.length < 8) errors.cep = "CEP requerido";
+    
+    const phoneDigits = formData.phone.replace(/\D/g, "");
+    if (!phoneDigits) {
+      errors.phone = "WhatsApp é obrigatório";
+    } else if (phoneDigits.length !== 11) {
+      errors.phone = "WhatsApp inválido (digite 11 números com DDD)";
+    }
+    
+    const cpfDigits = formData.cpf.replace(/\D/g, "");
+    if (!cpfDigits) {
+      errors.cpf = "CPF ou CNPJ é obrigatório";
+    } else if (cpfDigits.length === 11) {
+      if (!isValidCpf(cpfDigits)) {
+        errors.cpf = "CPF inválido";
+      }
+    } else if (cpfDigits.length === 14) {
+      if (!isValidCnpj(cpfDigits)) {
+        errors.cpf = "CNPJ inválido";
+      }
+    } else {
+      errors.cpf = "CPF ou CNPJ inválido";
+    }
+
+    if (formData.cep.replace(/\D/g, "").length < 8) errors.cep = "CEP requerido";
     if (!formData.street.trim()) errors.street = "Logradouro requerido";
     if (!formData.number.trim()) errors.number = "Número requerido";
     setFormErrors(errors);
@@ -131,25 +229,29 @@ export default function CheckoutModal({
   };
 
   const validateStep3 = () => {
-    const errors: Record<string, string> = {};
-    if (formData.paymentMethod === "credit_card") {
-      if (formData.cardNumber.replace(/\s/g, "").length < 16) errors.cardNumber = "Cartão inválido";
-      if (!formData.cardName.trim()) errors.cardName = "Nome impresso inválido";
-      if (!formData.cardExpiry.includes("/")) errors.cardExpiry = "Validade incorreta";
-      if (formData.cardCvv.length < 3) errors.cardCvv = "CVV inválido";
-    }
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return true;
   };
 
   const submitPayment = async () => {
     setIsSubmitting(true);
     setApiError(null);
     try {
+      const activeCustoms = customizations.slice(0, cart.quantity).filter(x => x.enabled);
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formData, cart, finalTotal, subtotal, couponCode: couponApplied ? couponCode : null, couponDiscount, pixDiscount: methodDiscount }),
+        body: JSON.stringify({
+          formData,
+          cart: {
+            ...cart,
+            customizations: activeCustoms.map(c => ({ name: c.name, number: c.number })),
+          },
+          finalTotal,
+          subtotal,
+          couponCode: couponApplied ? couponCode : null,
+          couponDiscount,
+          pixDiscount: methodDiscount,
+        }),
       });
       const data: CheckoutApiResponse = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Erro ao processar pagamento");
@@ -167,7 +269,30 @@ export default function CheckoutModal({
   };
 
   const nextStep = () => {
-    if (step === 1) setStep(2);
+    if (step === 1) {
+      const activeCustoms = customizations.slice(0, cart.quantity);
+      let hasInvalid = false;
+      for (let i = 0; i < activeCustoms.length; i++) {
+        const item = activeCustoms[i];
+        if (item.enabled) {
+          if (!item.name.trim() || !item.number.trim()) {
+            hasInvalid = true;
+            break;
+          }
+        }
+      }
+
+      if (hasInvalid) {
+        setFormErrors(p => ({
+          ...p,
+          customization: "Por favor, preencha o Nome e o Número de todas as camisetas personalizadas.",
+        }));
+        return;
+      }
+
+      setFormErrors(p => ({ ...p, customization: "" }));
+      setStep(2);
+    }
     else if (step === 2) { if (validateStep2()) setStep(3); }
     else if (step === 3) { if (validateStep3()) submitPayment(); }
   };
@@ -277,6 +402,80 @@ export default function CheckoutModal({
                 </div>
               )}
 
+              {/* Personalização de Camisa */}
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-4 shadow-xl">
+                <div className="flex items-center space-x-2.5">
+                  <Sparkles className="w-5 h-5 text-[#FFD400]" />
+                  <div>
+                    <span className="text-xs font-bold text-white uppercase tracking-wider block">Personalização de Camisetas</span>
+                    <span className="text-[10px] text-gray-400">Adicione nome e número por + R$ 9,90 por camiseta</span>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-1">
+                  {Array.from({ length: cart.quantity }).map((_, i) => {
+                    const item = customizations[i] || { name: "", number: "", enabled: false };
+                    let labelName = `Camisa #${i + 1}`;
+                    if (cart.quantity === 1) {
+                      labelName = "Sua Camiseta";
+                    } else {
+                      const itemSize = i === 0 ? cart.size : (i === 1 ? (cart.secondSize || "G") : "G");
+                      labelName = `Camisa #${i + 1} (Tamanho ${itemSize})`;
+                    }
+
+                    return (
+                      <div key={i} className="bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-200">{labelName}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCustomizationChange(i, "enabled", !item.enabled)}
+                            className={`text-[10px] px-2.5 py-1 rounded-md font-black border uppercase transition-all cursor-pointer ${
+                              item.enabled
+                                ? "bg-[#FFD400] text-black border-[#FFD400]"
+                                : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10"
+                            }`}
+                          >
+                            {item.enabled ? "✓ Ativado" : "Personalizar (+R$ 9,90)"}
+                          </button>
+                        </div>
+
+                        {item.enabled && (
+                          <div className="grid grid-cols-2 gap-3 animate-fade-in pt-1">
+                            <div>
+                              <label className="block text-[9px] text-gray-400 font-bold uppercase mb-1">Nome nas Costas</label>
+                              <input
+                                type="text"
+                                maxLength={15}
+                                value={item.name}
+                                onChange={(e) => handleCustomizationChange(i, "name", e.target.value)}
+                                placeholder="EX: NEYMAR JR"
+                                className="w-full bg-black/65 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#FFD400] font-mono tracking-wider uppercase"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] text-gray-400 font-bold uppercase mb-1">Número</label>
+                              <input
+                                type="text"
+                                maxLength={3}
+                                value={item.number}
+                                onChange={(e) => handleCustomizationChange(i, "number", e.target.value)}
+                                placeholder="EX: 10"
+                                className="w-full bg-black/65 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#FFD400] font-mono font-bold"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {formErrors.customization && (
+                  <div className="text-[11px] text-red-400 font-bold mt-1">⚠ {formErrors.customization}</div>
+                )}
+              </div>
+
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 flex items-center gap-3">
                 <Ticket className="w-4 h-4 text-[#FFD400] shrink-0 animate-bounce" />
                 <span className="text-xs text-gray-300 font-bold uppercase shrink-0">Cupom:</span>
@@ -360,57 +559,16 @@ export default function CheckoutModal({
           {/* STEP 3 */}
           {step === 3 && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => handleInputChange("paymentMethod","pix")} className={`p-4 rounded-xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer ${formData.paymentMethod==="pix"?"bg-emerald-950/20 border-emerald-500 text-emerald-400 scale-[1.02]":"bg-[#05070a]/90 border-white/10 text-white/50 hover:text-white"}`}>
-                  <span className="font-extrabold text-sm font-mono">⚡ PIX</span>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">✓ 5% DESCONTO</span>
-                </button>
-                <button type="button" onClick={() => handleInputChange("paymentMethod","credit_card")} className={`p-4 rounded-xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer ${formData.paymentMethod==="credit_card"?"bg-yellow-950/20 border-[#FFD400] text-[#FFD400] scale-[1.02]":"bg-[#05070a]/90 border-white/10 text-white/50 hover:text-white"}`}>
-                  <CreditCard className="w-5 h-5 shrink-0" />
-                  <span className="font-extrabold text-sm uppercase">Cartão de Crédito</span>
-                  <span className="text-[10px] text-[#FFD400] font-bold">ATÉ 12X SEM JUROS</span>
-                </button>
-              </div>
-
-              {formData.paymentMethod === "pix" && (
-                <div className="bg-white/5 p-5 rounded-2xl border border-white/10 text-center space-y-2">
-                  <p className="text-xs text-gray-300">Ao confirmar, um QR code PIX real será gerado. O desconto de 5% já está incluso.</p>
+              <div className="bg-emerald-950/20 border border-emerald-500/30 p-5 rounded-2xl flex flex-col items-center gap-3 text-center">
+                <span className="font-black text-lg text-emerald-400 font-mono tracking-wide">⚡ PAGAMENTO EXCLUSIVO VIA PIX</span>
+                <p className="text-xs text-gray-300 leading-relaxed max-w-sm">
+                  Ao confirmar o pedido, um código PIX copia-e-cola oficial e um QR code serão gerados imediatamente.
+                </p>
+                <div className="bg-white/5 px-6 py-2.5 rounded-xl border border-white/10">
+                  <span className="text-[10px] text-gray-400 block font-mono uppercase tracking-widest">Valor do PIX</span>
                   <p className="text-2xl font-black text-[#FFD400] font-mono">R$ {finalTotal.toFixed(2).replace(".",",")}</p>
                 </div>
-              )}
-
-              {formData.paymentMethod === "credit_card" && (
-                <div className="bg-white/5 p-5 rounded-2xl border border-white/10 space-y-4">
-                  <div>
-                    <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1">Número do Cartão</label>
-                    <input type="text" maxLength={19} value={formData.cardNumber} onChange={e => handleInputChange("cardNumber", e.target.value.replace(/\D/g,"").replace(/(\d{4})(?=\d)/g,"$1 "))} placeholder="0000 0000 0000 0000" className={`w-full bg-black/55 border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FFD400] font-mono ${formErrors.cardNumber?"border-red-500":"border-white/10"}`} />
-                    {formErrors.cardNumber && <span className="text-[10px] text-red-500 font-bold block mt-1">{formErrors.cardNumber}</span>}
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1">Nome no Cartão</label>
-                    <input type="text" value={formData.cardName} onChange={e => handleInputChange("cardName", e.target.value)} placeholder="RAFAEL M SILVA" className={`w-full bg-black/55 border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FFD400] uppercase ${formErrors.cardName?"border-red-500":"border-white/10"}`} />
-                    {formErrors.cardName && <span className="text-[10px] text-red-500 font-bold block mt-1">{formErrors.cardName}</span>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1">Validade (MM/AA)</label>
-                      <input type="text" maxLength={5} placeholder="12/28" value={formData.cardExpiry} onChange={e => handleInputChange("cardExpiry", e.target.value)} className={`w-full bg-black/55 border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FFD400] font-mono ${formErrors.cardExpiry?"border-red-500":"border-white/10"}`} />
-                      {formErrors.cardExpiry && <span className="text-[10px] text-red-500 font-bold block mt-1">{formErrors.cardExpiry}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1">CVV</label>
-                      <input type="text" maxLength={4} placeholder="123" value={formData.cardCvv} onChange={e => handleInputChange("cardCvv", e.target.value.replace(/\D/g,""))} className={`w-full bg-black/55 border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FFD400] font-mono ${formErrors.cardCvv?"border-red-500":"border-white/10"}`} />
-                      {formErrors.cardCvv && <span className="text-[10px] text-red-500 font-bold block mt-1">{formErrors.cardCvv}</span>}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1">Parcelamento</label>
-                    <select value={formData.installments} onChange={e => handleInputChange("installments", e.target.value)} className="w-full bg-black/55 border border-white/10 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#FFD400]">
-                      {[1,2,3,4,6,10,12].map(n => <option key={n} value={String(n)}>{n}x de R$ {(finalTotal/n).toFixed(2).replace(".",",")} (sem juros)</option>)}
-                    </select>
-                  </div>
-                </div>
-              )}
+              </div>
 
               {apiError && (
                 <div className="flex items-start gap-3 bg-red-950/30 border border-red-500/40 p-4 rounded-xl">

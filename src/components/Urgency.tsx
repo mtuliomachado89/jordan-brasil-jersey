@@ -37,7 +37,7 @@ export default function Urgency() {
     // Rotate sales feed
     const feedTimer = setInterval(() => {
       setActiveFeedIndex((prev) => (prev + 1) % SALES_FEED.length);
-    }, 6000);
+    }, 20000);
 
     return () => {
       clearInterval(stockTimer);

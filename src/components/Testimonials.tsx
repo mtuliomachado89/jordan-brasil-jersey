@@ -106,6 +106,18 @@ export default function Testimonials() {
                 <p className="text-sm sm:text-base text-gray-200 font-medium italic leading-relaxed">
                   "{t.text}"
                 </p>
+
+                {/* Optional Review Image with predefined max size */}
+                {t.reviewImage && (
+                  <div className="mt-4">
+                    <img
+                      src={t.reviewImage}
+                      alt={`Foto da avaliação de ${t.name}`}
+                      className="max-h-52 max-w-full rounded-xl border border-white/10 object-cover shadow-2xl hover:scale-[1.02] transition-transform duration-300"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Reviewer Meta info */}
